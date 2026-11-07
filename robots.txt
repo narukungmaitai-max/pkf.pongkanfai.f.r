@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://pongkanfai.com/sitemap.xml
+Sitemap: https://narukungmaitai-max.github.io/pkf.pongkanfai.f.r/sitemap.xml
