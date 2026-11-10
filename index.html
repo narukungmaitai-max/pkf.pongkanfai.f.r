@@ -3096,6 +3096,53 @@
   </section>
 </div>
 
+<!-- PKF Local AI (Ollama gemma4) -->
+<style>
+#pkf-ai-btn{position:fixed;bottom:20px;right:20px;z-index:99998;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff6b35,#f7931e);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+#pkf-ai-modal{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
+#pkf-ai-box{width:min(420px,92vw);height:min(560px,85vh);background:#141d2b;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;border:1px solid #2a3a52}
+#pkf-ai-head{background:#0f1622;padding:12px 16px;color:#ffb35c;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+#pkf-ai-head button{background:none;border:none;color:#8fa3bf;font-size:20px;cursor:pointer}
+#pkf-ai-log{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+.pkf-msg{max-width:85%;padding:8px 12px;border-radius:10px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.pkf-user{align-self:flex-end;background:#1f4e8c;color:#fff}
+.pkf-bot{align-self:flex-start;background:#223049;color:#dbe6f4}
+#pkf-ai-foot{display:flex;padding:10px;gap:8px;background:#0f1622}
+#pkf-ai-input{flex:1;background:#1a2536;border:1px solid #2a3a52;border-radius:8px;color:#fff;padding:8px 10px;font-size:14px;outline:none}
+#pkf-ai-send{background:#ff6b35;border:none;color:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700}
+</style>
+<button id="pkf-ai-btn" title="PKF AI (Gemma ในเครื่อง)">🔥</button>
+<div id="pkf-ai-modal"><div id="pkf-ai-box">
+<div id="pkf-ai-head"><span>PKF AI — Gemma (ทำงานในเครื่อง ฟรี)</span><button onclick="document.getElementById('pkf-ai-modal').style.display='none'">✕</button></div>
+<div id="pkf-ai-log"><div class="pkf-msg pkf-bot">สวัสดี! ถามเรื่องไฟป่า การป้องกัน หรือข้อมูลในเว็บนี้ได้เลย</div></div>
+<div id="pkf-ai-foot"><input id="pkf-ai-input" placeholder="พิมพ์คำถาม..."><button id="pkf-ai-send">ส่ง</button></div>
+</div></div>
+<script>
+(function(){
+var btn=document.getElementById('pkf-ai-btn'),modal=document.getElementById('pkf-ai-modal'),
+log=document.getElementById('pkf-ai-log'),input=document.getElementById('pkf-ai-input'),send=document.getElementById('pkf-ai-send');
+var history=[{role:'system',content:'คุณคือผู้ช่วยของเว็บ PKF (pong.kan.fai) ระบบเฝ้าระวังไฟป่าของไทย ตอบภาษาไทยกระชับ เป็นมิตร ใช้ข้อมูลไฟป่า/อากาศ/ดาวเทียมช่วยตอบ'}];
+btn.onclick=function(){modal.style.display='flex';input.focus()};
+modal.onclick=function(e){if(e.target===modal)modal.style.display='none'};
+function add(cls,t){var d=document.createElement('div');d.className='pkf-msg '+cls;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function ask(){
+var q=input.value.trim();if(!q)return;input.value='';
+add('pkf-user',q);history.push({role:'user',content:q});
+var wait=add('pkf-bot','กำลังคิด...');
+send.disabled=true;
+fetch('http://127.0.0.1:11434/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+body:JSON.stringify({model:'gemma4',messages:history,stream:false})})
+.then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+.then(function(j){var a=(j.message&&j.message.content)||'(ไม่มีคำตอบ)';
+wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=false;input.focus()})
+.catch(function(e){wait.textContent='❌ เชื่อมต่อ AI ในเครื่องไม่ได้\nเปิดโปรแกรม Ollama ก่อน (รันคำสั่ง: ollama serve)\nและตั้ง OLLAMA_ORIGINS ตามคู่มือ\n('+e.message+')';send.disabled=false});
+}
+send.onclick=ask;
+input.addEventListener('keydown',function(e){if(e.key==='Enter')ask()});
+})();
+</script>
+<!-- /PKF Local AI -->
+
 </body>
 
 </html>
