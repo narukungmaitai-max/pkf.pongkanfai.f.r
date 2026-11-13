@@ -1,0 +1,14 @@
+{
+  "name": "PKF - pong.kan.fai Fire Intelligence",
+  "short_name": "PKF",
+  "description": "Wildfire risk monitoring and forecasting for Thailand",
+  "start_url": "/pkf.pongkanfai.f.r/",
+  "scope": "/pkf.pongkanfai.f.r/",
+  "display": "standalone",
+  "background_color": "#101b2c",
+  "theme_color": "#101b2c",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
