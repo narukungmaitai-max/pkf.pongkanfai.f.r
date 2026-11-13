@@ -1442,7 +1442,7 @@
                 showTab('home');
             }
 
-            function applyModeUI() {
+            function applyModeUI() { try{var dnp=document.getElementById("dev-notify-panel");if(dnp)dnp.classList.toggle("hidden-elm",!isDevMode);}catch(e){} 
                 if (isDevMode) {
                     document.getElementById('nav-public').classList.add('hidden-elm');
                     document.getElementById('nav-public').classList.remove('block-elm');
@@ -1554,7 +1554,7 @@
             }
 
             let lastESP_SentRisk = null;
-            function sendRiskToESP(riskValue) {
+            function sendRiskToESP(riskValue) { try{pkfCheckAlert(riskValue);}catch(e){} 
                 if (riskValue === lastESP_SentRisk) return;
                 lastESP_SentRisk = riskValue;
                 const url = `https://api.thingspeak.com/update?api_key=QQCRTDDVV8P0SKQY&field6=${riskValue}`;
