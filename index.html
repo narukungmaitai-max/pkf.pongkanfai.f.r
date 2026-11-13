@@ -3128,7 +3128,7 @@
 <input id="dnp-threshold" type="number" min="0" max="100" placeholder="threshold % (default 55)">
 <button class="dnp-green" onclick="dnpSaveThreshold()">บันทึก threshold</button>
 <button class="dnp-blue" onclick="dnpAuthorize()">ขอสิทธิ์แจ้งเตือน (Authorize)</button>
-<button class="dnp-orange" onclick="dnpTest()">ทดสอบส่งแจ้งเตือนทันที</button>
+<button class="dnp-blue" onclick="dnpPush()">ส่ง push ข้าม (ทดสอบ)</button><button class="dnp-orange" onclick="dnpTest()">ทดสอบส่งแจ้งเตือนทันที</button>
 <div class="dnp-hint">แจ้งเตือนอัตโนมัติเมื่อค่าความเสี่ยง ≥ threshold (ทำงานบนเครื่องนี้) • การ push ข้ามเครื่องผ่าน OneSignal ต้องมี backend เพิ่ม</div>
 <h4 style="margin-top:10px">🤖 AI Cloud Key (Gemini)</h4>
 <input id="dnp-aikey" type="password" placeholder="วาง Gemini API key">
@@ -3142,7 +3142,9 @@ function dnpSaveThreshold(){var v=parseFloat(document.getElementById('dnp-thresh
 function dnpAuthorize(){try{if(window.OneSignal&&OneSignal.Slidedown){OneSignal.Slidedown.promptPush();return;}}catch(e){}try{OneSignal.Notifications.requestPermission();}catch(e){alert('OneSignal ยังโหลดไม่เสร็จ ลองอีกครั้ง');}}
 function dnpTest(){var v=pkfAlertThreshold();if(!('Notification' in window)){alert('เบราว์เซอร์ไม่รองรับ');return;}if(Notification.permission!=='granted'){Notification.requestPermission().then(function(p){if(p==='granted')dnpTest();});return;}new Notification('PKF ทดสอบแจ้งเตือน',{body:'โอกาสเกิดไฟเกิน '+v+'% - นี่คือการแจ้งเตือนจริงบนเครื่องนี้'});}
 function dnpSaveKey(){var k=document.getElementById('dnp-aikey').value.trim();if(!k){alert('กรอก key ก่อน');return;}localStorage.setItem('pkf_gemini_key',k);alert('บันทึก AI key แล้ว - AI จะใช้ cloud ให้ทุกเครื่อง');}
-function pkfCheckAlert(v){try{if(v>=pkfAlertThreshold()&&('Notification' in window)&&Notification.permission==='granted'){new Notification('PKF เตือนภัยไฟป่า',{body:'โอกาสเกิดไฟ '+v+'% เกินเกณฑ์ '+pkfAlertThreshold()+'% - ตรวจสอบแผนที่ด่วน'});}}catch(e){}}
+function pkfCheckAlert(v){try{if(v>=pkfAlertThreshold()){if(('Notification' in window)&&Notification.permission==='granted'){new Notification('PKF เตือนภัยไฟป่า',{body:'โอกาสเกิดไฟ '+v+'% เกินเกณฑ์ '+pkfAlertThreshold()+'% - ตรวจสอบแผนที่ด่วน'});}pkfProxyPush('PKF เตือนภัยไฟป่า','โอกาสเกิดไฟ '+v+'% เกินเกณฑ์ '+pkfAlertThreshold()+'% - ตรวจสอบแผนที่ด่วน');}}catch(e){}}
+function pkfProxyPush(title,message){try{fetch('https://script.google.com/macros/s/AKfycbxeUrsz0gSlGL-dpWsK2TCxAsVHk3yMzgM8Oqr5cxgIsxsGn77f5j8pDtNhC1B-DE8n/exec',{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'push',title:title,message:message})}).catch(function(){});}catch(e){}}
+function dnpPush(){pkfProxyPush('PKF ทดสอบ push ข้ามเครื่อง','ระบบแจ้งเตือนไฟป่าถึงทุกอุปกรณ์ที่กด Allow แล้ว');alert('ส่งคำสั่ง push แล้ว - ทุกอุปกรณ์ที่ subscribe จะได้รับการแจ้งเตือน');}
 window.pkfAIHistory=[{role:'system',content:'คุณคือผู้ช่วยของเว็บ PKF (pong.kan.fai) ระบบเฝ้าระวังไฟป่าของไทย ตอบภาษาไทยกระชับ เป็นมิตร ใช้ข้อมูลไฟป่า/อากาศ/ดาวเทียมช่วยตอบ'}];
 function geminiKey(){return (localStorage.getItem('pkf_gemini_key')||'').trim();}
 function askGemini(q,ok,fail){
@@ -3161,7 +3163,7 @@ function askGemini(q,ok,fail){
   tryOne();
 }
 function askProxy(q,ok,fail){
-  fetch('https://script.google.com/macros/s/AKfycbzwms-QWmUNpt2ZAkMkgs0zTkXE01kwBG2mBMhWIiYwjgl1mgTrCzPduY171bjWaXHUQA/exec',
+  fetch('https://script.google.com/macros/s/AKfycbxeUrsz0gSlGL-dpWsK2TCxAsVHk3yMzgM8Oqr5cxgIsxsGn77f5j8pDtNhC1B-DE8n/exec',
     {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'ai',prompt:q})})
     .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
     .then(function(j){if(j&&j.reply){ok(j.reply);}else{throw new Error('no reply');}})
