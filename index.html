@@ -3171,7 +3171,7 @@ send.disabled=true;
 function fail(e){wait.textContent='❌ เชื่อมต่อ AI ไม่สำเร็จ\n'+e.message+'\n(Dev mode: ใส่ Gemini key ฟรีที่ aistudio.google.com/apikey หรือเปิด Ollama ในเครื่อง)';send.disabled=false;}
 if(true){try{fetch('https://script.google.com/macros/s/AKfycbzwms-QWmUNpt2ZAkMkgs0zTkXE01kwBG2mBMhWIiYwjgl1mgTrCzPduY171bjWaXHUQA/exec',{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'ai',prompt:q})}).then(function(r){return r.json()}).then(function(j){if(j&&j.reply){wait.textContent=j.reply;history.push({role:'assistant',content:j.reply});send.disabled=false;input.focus();}else{throw new Error('no reply')}}).catch(function(){if(geminiKey()){askGemini(q,wait,function(a){wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=false;input.focus();},fail);}else{ollamaAsk(q,wait,fail);}});return;}catch(e){}
 askGemini(q,wait,function(a){wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=false;input.focus();},fail);
-}else{ollamaAsk(q,fail);}
+}else{ollamaAsk(q,wait,function(a){wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=false;input.focus();},fail);}
 fetch('http://127.0.0.1:11434/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
 body:JSON.stringify({model:'gemma4',messages:history,stream:false})})
 .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
@@ -3180,7 +3180,7 @@ wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=fals
 .catch(fail);
 }else{fail(new Error('ยังไม่มี AI key'));}
 }
-function ollamaAsk(q,fail){fetch('http://127.0.0.1:11434/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gemma4',messages:history,stream:false})}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(j){return j.message&&j.message.content}).catch(function(e){fail(e)})}
+function ollamaAsk(q,wait,ok,fail){fetch('http://127.0.0.1:11434/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gemma4',messages:history,stream:false})}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(j){var a=(j.message&&j.message.content)||'';if(a){ok(a);}else{fail(new Error('empty'));}}).catch(function(e){fail(e)})}
 send.onclick=ask;
 input.addEventListener('keydown',function(e){if(e.key==='Enter')ask()});
 })();
