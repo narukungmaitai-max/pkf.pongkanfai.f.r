@@ -3140,52 +3140,70 @@ window.openGoogleEarth=function(btn){var la=parseFloat(btn.dataset.lat),lo=parse
 function pkfAlertThreshold(){return parseFloat(localStorage.getItem('pkf_alert_threshold')||'55')||55;}
 function dnpSaveThreshold(){var v=parseFloat(document.getElementById('dnp-threshold').value);if(isNaN(v))v=55;localStorage.setItem('pkf_alert_threshold',String(v));if(window.OneSignal&&OneSignal.User&&OneSignal.User.addTag){try{OneSignal.User.addTag('risk_threshold',v);}catch(e){}}alert('บันทึก threshold = '+v+'% แล้ว');}
 function dnpAuthorize(){try{if(window.OneSignal&&OneSignal.Slidedown){OneSignal.Slidedown.promptPush();return;}}catch(e){}try{OneSignal.Notifications.requestPermission();}catch(e){alert('OneSignal ยังโหลดไม่เสร็จ ลองอีกครั้ง');}}
-function dnpTest(){var v=pkfAlertThreshold();if(!('Notification' in window)){alert('เบราว์เซอร์ไม่รองรับ');return;}if(Notification.permission!=='granted'){Notification.requestPermission().then(function(p){if(p==='granted')dnpTest();});return;}new Notification('PKF 🔥 ทดสอบแจ้งเตือน',{body:'โอกาสเกิดไฟเกิน '+v+'% — นี่คือการแจ้งเตือนจริงบนเครื่องนี้',icon:'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'18\' fill=\'%23101b2c\'/%3E%3C/svg%3E'});}
-function dnpSaveKey(){var k=document.getElementById('dnp-aikey').value.trim();if(!k){alert('กรอก key ก่อน');return;}localStorage.setItem('pkf_gemini_key',k);alert('บันทึก AI key แล้ว — AI จะใช้ cloud ให้ทุกเครื่อง');}
-function pkfCheckAlert(v){try{if(v>=pkfAlertThreshold()&&('Notification' in window)&&Notification.permission==='granted'){new Notification('PKF 🔥 เตือนภัยไฟป่า',{body:'โอกาสเกิดไฟ '+v+'% เกินเกณฑ์ '+pkfAlertThreshold()+'% — ตรวจสอบแผนที่ด่วน'});}}catch(e){}}
-(function(){
-var btn=document.getElementById('pkf-ai-btn'),modal=document.getElementById('pkf-ai-modal'),
-log=document.getElementById('pkf-ai-log'),input=document.getElementById('pkf-ai-input'),send=document.getElementById('pkf-ai-send');
-var history=[{role:'system',content:'คุณคือผู้ช่วยของเว็บ PKF (pong.kan.fai) ระบบเฝ้าระวังไฟป่าของไทย ตอบภาษาไทยกระชับ เป็นมิตร ใช้ข้อมูลไฟป่า/อากาศ/ดาวเทียมช่วยตอบ'}];
-btn.onclick=function(){modal.style.display='flex';input.focus()};
-modal.onclick=function(e){if(e.target===modal)modal.style.display='none'};
-function add(cls,t){var d=document.createElement('div');d.className='pkf-msg '+cls;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function dnpTest(){var v=pkfAlertThreshold();if(!('Notification' in window)){alert('เบราว์เซอร์ไม่รองรับ');return;}if(Notification.permission!=='granted'){Notification.requestPermission().then(function(p){if(p==='granted')dnpTest();});return;}new Notification('PKF ทดสอบแจ้งเตือน',{body:'โอกาสเกิดไฟเกิน '+v+'% - นี่คือการแจ้งเตือนจริงบนเครื่องนี้'});}
+function dnpSaveKey(){var k=document.getElementById('dnp-aikey').value.trim();if(!k){alert('กรอก key ก่อน');return;}localStorage.setItem('pkf_gemini_key',k);alert('บันทึก AI key แล้ว - AI จะใช้ cloud ให้ทุกเครื่อง');}
+function pkfCheckAlert(v){try{if(v>=pkfAlertThreshold()&&('Notification' in window)&&Notification.permission==='granted'){new Notification('PKF เตือนภัยไฟป่า',{body:'โอกาสเกิดไฟ '+v+'% เกินเกณฑ์ '+pkfAlertThreshold()+'% - ตรวจสอบแผนที่ด่วน'});}}catch(e){}}
+window.pkfAIHistory=[{role:'system',content:'คุณคือผู้ช่วยของเว็บ PKF (pong.kan.fai) ระบบเฝ้าระวังไฟป่าของไทย ตอบภาษาไทยกระชับ เป็นมิตร ใช้ข้อมูลไฟป่า/อากาศ/ดาวเทียมช่วยตอบ'}];
 function geminiKey(){return (localStorage.getItem('pkf_gemini_key')||'').trim();}
-function askGemini(q,wait,done,fail){
-var key=geminiKey();var models=['gemini-3.1-flash-lite','gemini-flash-latest','gemini-2.5-flash-lite'];var i=0;
-function tryOne(){
-fetch('https://generativelanguage.googleapis.com/v1beta/models/'+models[i]+':generateContent?key='+encodeURIComponent(key),
-{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:history[0].content}]},contents:[{role:'user',parts:[{text:q}]}]})})
-.then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
-.then(function(j){var a='';try{a=j.candidates[0].content.parts.map(function(p){return p.text||''}).join('')}catch(e){}
-if(!a)throw new Error('empty');done(a);})
-.catch(function(e){i++;if(i<models.length){wait.textContent='กำลังคิด... ('+models[i]+')';tryOne();}else fail(e);});
+function askGemini(q,ok,fail){
+  var key=geminiKey();
+  var models=['gemini-3.1-flash-lite','gemini-flash-latest','gemini-2.5-flash-lite'];
+  var i=0;
+  function tryOne(){
+    fetch('https://generativelanguage.googleapis.com/v1beta/models/'+models[i]+':generateContent?key='+encodeURIComponent(key),
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:window.pkfAIHistory[0].content}]},contents:[{role:'user',parts:[{text:q}]}]})})
+      .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+      .then(function(j){var a='';try{a=j.candidates[0].content.parts.map(function(p){return p.text||'';}).join('');}catch(e){}
+        if(!a)throw new Error('empty');
+        ok(a);})
+      .catch(function(e){i++;if(i<models.length){tryOne();}else{fail(e);}});
+  }
+  tryOne();
 }
-tryOne();
+function askProxy(q,ok,fail){
+  fetch('https://script.google.com/macros/s/AKfycbzwms-QWmUNpt2ZAkMkgs0zTkXE01kwBG2mBMhWIiYwjgl1mgTrCzPduY171bjWaXHUQA/exec',
+    {method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'ai',prompt:q})})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(j){if(j&&j.reply){ok(j.reply);}else{throw new Error('no reply');}})
+    .catch(fail);
 }
-function ask(){
-var q=input.value.trim();if(!q)return;input.value='';
-add('pkf-user',q);history.push({role:'user',content:q});
-var wait=add('pkf-bot','กำลังคิด...');
-send.disabled=true;
-function fail(e){wait.textContent='❌ เชื่อมต่อ AI ไม่สำเร็จ\n'+e.message+'\n(Dev mode: ใส่ Gemini key ฟรีที่ aistudio.google.com/apikey หรือเปิด Ollama ในเครื่อง)';send.disabled=false;}
-if(true){try{fetch('https://script.google.com/macros/s/AKfycbzwms-QWmUNpt2ZAkMkgs0zTkXE01kwBG2mBMhWIiYwjgl1mgTrCzPduY171bjWaXHUQA/exec',{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'ai',prompt:q})}).then(function(r){return r.json()}).then(function(j){if(j&&j.reply){wait.textContent=j.reply;history.push({role:'assistant',content:j.reply});send.disabled=false;input.focus();}else{throw new Error('no reply')}}).catch(function(){if(geminiKey()){askGemini(q,wait,function(a){wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=false;input.focus();},fail);}else{ollamaAsk(q,wait,fail);}});return;}catch(e){}
-askGemini(q,wait,function(a){wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=false;input.focus();},fail);
-}else{ollamaAsk(q,wait,function(a){wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=false;input.focus();},fail);}
-fetch('http://127.0.0.1:11434/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({model:'gemma4',messages:history,stream:false})})
-.then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
-.then(function(j){var a=(j.message&&j.message.content)||'(ไม่มีคำตอบ)';
-wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=false;input.focus()})
-.catch(fail);
-}else{fail(new Error('ยังไม่มี AI key'));}
+function askOllama(q,ok,fail){
+  fetch('http://127.0.0.1:11434/api/chat',
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gemma4',messages:window.pkfAIHistory,stream:false})})
+    .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(j){var a=(j.message&&j.message.content)||'';if(a){ok(a);}else{throw new Error('empty');}})
+    .catch(fail);
 }
-function ollamaAsk(q,wait,ok,fail){fetch('http://127.0.0.1:11434/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gemma4',messages:history,stream:false})}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}).then(function(j){var a=(j.message&&j.message.content)||'';if(a){ok(a);}else{fail(new Error('empty'));}}).catch(function(e){fail(e)})}
-send.onclick=ask;
-input.addEventListener('keydown',function(e){if(e.key==='Enter')ask()});
+(function(){
+  var btn=document.getElementById('pkf-ai-btn'),modal=document.getElementById('pkf-ai-modal'),
+  log=document.getElementById('pkf-ai-log'),input=document.getElementById('pkf-ai-input'),send=document.getElementById('pkf-ai-send');
+  btn.addEventListener('click',function(){modal.style.display='flex';input.focus();});
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.style.display='none';});
+  function add(cls,t){var d=document.createElement('div');d.className='pkf-msg '+cls;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight;return d;}
+  function ask(){
+    var q=input.value.trim();
+    if(!q)return;
+    input.value='';
+    add('pkf-user',q);
+    window.pkfAIHistory.push({role:'user',content:q});
+    var wait=add('pkf-bot','กำลังคิด...');
+    send.disabled=true;
+    function done(a){wait.textContent=a;window.pkfAIHistory.push({role:'assistant',content:a});send.disabled=false;input.focus();}
+    function fail(e){wait.textContent='เชื่อมต่อ AI ไม่สำเร็จ: '+e.message;send.disabled=false;}
+    askProxy(q,done,function(){
+      if(geminiKey()){
+        askGemini(q,done,fail);
+      }else{
+        askOllama(q,done,fail);
+      }
+    });
+  }
+  send.addEventListener('click',ask);
+  input.addEventListener('keydown',function(e){if(e.key==='Enter')ask();});
 })();
 </script>
 <!-- /PKF Local AI -->
+
 
 
 </body>
