@@ -2884,7 +2884,7 @@
 
             function satShowHotspotDetails(hotspot, style) {
                 satelliteSelectedPin = { lat: hotspot.lat, lon: hotspot.lon, hotspot };
-                document.getElementById("sat-detail-coords").textContent = `ละติจูด ${hotspot.lat.toFixed(5)} · ลองจิจูด ${hotspot.lon.toFixed(5)}`;
+                document.getElementById("sat-detail-coords").textContent = `ละติจูด ${hotspot.lat.toFixed(5)} · ลองจิจูด ${hotspot.lon.toFixed(5)}`;try{var eb=document.getElementById("sat-earth-btn");if(eb){eb.dataset.lat=hotspot.lat;eb.dataset.lon=hotspot.lon;eb.classList.remove("hidden-elm");}}catch(e){}
                 document.getElementById("sat-view-imagery-btn").disabled = false;
                 const content = document.getElementById("sat-detail-content");
                 const conf = satEscapeHTML(style.label);
@@ -3096,9 +3096,9 @@
   </section>
 </div>
 
-<!-- PKF Local AI (Ollama gemma4) -->
+<!-- PKF Local AI (cloud + local fallback) -->
 <style>
-#pkf-ai-btn{position:fixed;bottom:20px;right:20px;z-index:99998;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff6b35,#f7931e);color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+#pkf-ai-btn{position:fixed;bottom:20px;right:20px;z-index:99998;width:56px;height:56px;border-radius:18px;border:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%23ffb15c'/%3E%3Cstop offset='1' stop-color='%23ef6545'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='%23101b2c'/%3E%3Cpath d='M34 8c3 12-7 14-4 24 2-4 7-6 9-11 8 8 12 15 8 24-3 7-10 11-18 10-10-1-17-8-17-18 0-8 5-15 13-21-1 8 1 11 3 12 1-8 5-14 6-20z' fill='url(%23g)'/%3E%3C/svg%3E");background-size:cover;background-position:center;box-shadow:0 4px 16px rgba(0,0,0,.4)}
 #pkf-ai-modal{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center}
 #pkf-ai-box{width:min(420px,92vw);height:min(560px,85vh);background:#141d2b;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;border:1px solid #2a3a52}
 #pkf-ai-head{background:#0f1622;padding:12px 16px;color:#ffb35c;font-weight:700;display:flex;justify-content:space-between;align-items:center}
@@ -3110,14 +3110,39 @@
 #pkf-ai-foot{display:flex;padding:10px;gap:8px;background:#0f1622}
 #pkf-ai-input{flex:1;background:#1a2536;border:1px solid #2a3a52;border-radius:8px;color:#fff;padding:8px 10px;font-size:14px;outline:none}
 #pkf-ai-send{background:#ff6b35;border:none;color:#fff;border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700}
+#dev-notify-panel{position:fixed;bottom:90px;right:20px;z-index:99997;width:300px;background:#141d2b;border:1px solid #2a3a52;border-radius:12px;padding:14px;color:#dbe6f4;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+#dev-notify-panel h4{margin:0 0 8px;color:#ffb35c;font-size:14px}
+#dev-notify-panel input{width:100%;box-sizing:border-box;background:#1a2536;border:1px solid #2a3a52;border-radius:8px;color:#fff;padding:6px 8px;margin-bottom:8px;font-size:13px}
+#dev-notify-panel button{width:100%;box-sizing:border-box;border:none;border-radius:8px;padding:8px;margin-bottom:6px;cursor:pointer;font-weight:700;font-size:13px}
+.dnp-blue{background:#1f4e8c;color:#fff}.dnp-orange{background:#ff6b35;color:#fff}.dnp-green{background:#0f7b4f;color:#fff}
+.dnp-hint{color:#8fa3bf;font-size:11px;line-height:1.5;margin-top:4px}
 </style>
-<button id="pkf-ai-btn" title="PKF AI (Gemma ในเครื่อง)">🔥</button>
+<button id="pkf-ai-btn" title="PKF AI ถาม-ตอบ"></button>
 <div id="pkf-ai-modal"><div id="pkf-ai-box">
-<div id="pkf-ai-head"><span>PKF AI — Gemma (ทำงานในเครื่อง ฟรี)</span><button onclick="document.getElementById('pkf-ai-modal').style.display='none'">✕</button></div>
+<div id="pkf-ai-head"><span>PKF AI ถาม-ตอบ</span><button onclick="document.getElementById('pkf-ai-modal').style.display='none'">✕</button></div>
 <div id="pkf-ai-log"><div class="pkf-msg pkf-bot">สวัสดี! ถามเรื่องไฟป่า การป้องกัน หรือข้อมูลในเว็บนี้ได้เลย</div></div>
 <div id="pkf-ai-foot"><input id="pkf-ai-input" placeholder="พิมพ์คำถาม..."><button id="pkf-ai-send">ส่ง</button></div>
 </div></div>
+<div id="dev-notify-panel" class="hidden-elm">
+<h4>🔔 Dev: ทดสอบการแจ้งเตือน</h4>
+<input id="dnp-threshold" type="number" min="0" max="100" placeholder="threshold % (default 55)">
+<button class="dnp-green" onclick="dnpSaveThreshold()">บันทึก threshold</button>
+<button class="dnp-blue" onclick="dnpAuthorize()">ขอสิทธิ์แจ้งเตือน (Authorize)</button>
+<button class="dnp-orange" onclick="dnpTest()">ทดสอบส่งแจ้งเตือนทันที</button>
+<div class="dnp-hint">แจ้งเตือนอัตโนมัติเมื่อค่าความเสี่ยง ≥ threshold (ทำงานบนเครื่องนี้) • การ push ข้ามเครื่องผ่าน OneSignal ต้องมี backend เพิ่ม</div>
+<h4 style="margin-top:10px">🤖 AI Cloud Key (Gemini)</h4>
+<input id="dnp-aikey" type="password" placeholder="วาง Gemini API key">
+<button class="dnp-blue" onclick="dnpSaveKey()">บันทึก AI key</button>
+<div class="dnp-hint">รับ key ฟรี: aistudio.google.com/apikey — มี key = AI ใช้ได้ทุกเครื่อง ไม่มี = ใช้ Ollama ในเครื่องนี้เท่านั้น</div>
+</div>
 <script>
+window.openGoogleEarth=function(btn){var la=parseFloat(btn.dataset.lat),lo=parseFloat(btn.dataset.lon);window.open('https://earth.google.com/web/@'+la+','+lo+',0a,3000d,35y,0h,0t,0r','_blank');};
+function pkfAlertThreshold(){return parseFloat(localStorage.getItem('pkf_alert_threshold')||'55')||55;}
+function dnpSaveThreshold(){var v=parseFloat(document.getElementById('dnp-threshold').value);if(isNaN(v))v=55;localStorage.setItem('pkf_alert_threshold',String(v));if(window.OneSignal&&OneSignal.User&&OneSignal.User.addTag){try{OneSignal.User.addTag('risk_threshold',v);}catch(e){}}alert('บันทึก threshold = '+v+'% แล้ว');}
+function dnpAuthorize(){try{if(window.OneSignal&&OneSignal.Slidedown){OneSignal.Slidedown.promptPush();return;}}catch(e){}try{OneSignal.Notifications.requestPermission();}catch(e){alert('OneSignal ยังโหลดไม่เสร็จ ลองอีกครั้ง');}}
+function dnpTest(){var v=pkfAlertThreshold();if(!('Notification' in window)){alert('เบราว์เซอร์ไม่รองรับ');return;}if(Notification.permission!=='granted'){Notification.requestPermission().then(function(p){if(p==='granted')dnpTest();});return;}new Notification('PKF 🔥 ทดสอบแจ้งเตือน',{body:'โอกาสเกิดไฟเกิน '+v+'% — นี่คือการแจ้งเตือนจริงบนเครื่องนี้',icon:'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 64 64\'%3E%3Crect width=\'64\' height=\'64\' rx=\'18\' fill=\'%23101b2c\'/%3E%3C/svg%3E'});}
+function dnpSaveKey(){var k=document.getElementById('dnp-aikey').value.trim();if(!k){alert('กรอก key ก่อน');return;}localStorage.setItem('pkf_gemini_key',k);alert('บันทึก AI key แล้ว — AI จะใช้ cloud ให้ทุกเครื่อง');}
+function pkfCheckAlert(v){try{if(v>=pkfAlertThreshold()&&('Notification' in window)&&Notification.permission==='granted'){new Notification('PKF 🔥 เตือนภัยไฟป่า',{body:'โอกาสเกิดไฟ '+v+'% เกินเกณฑ์ '+pkfAlertThreshold()+'% — ตรวจสอบแผนที่ด่วน'});}}catch(e){}}
 (function(){
 var btn=document.getElementById('pkf-ai-btn'),modal=document.getElementById('pkf-ai-modal'),
 log=document.getElementById('pkf-ai-log'),input=document.getElementById('pkf-ai-input'),send=document.getElementById('pkf-ai-send');
@@ -3125,23 +3150,42 @@ var history=[{role:'system',content:'คุณคือผู้ช่วยข�
 btn.onclick=function(){modal.style.display='flex';input.focus()};
 modal.onclick=function(e){if(e.target===modal)modal.style.display='none'};
 function add(cls,t){var d=document.createElement('div');d.className='pkf-msg '+cls;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight;return d}
+function geminiKey(){return (localStorage.getItem('pkf_gemini_key')||'').trim();}
+function askGemini(q,wait,done,fail){
+var key=geminiKey();var models=['gemini-2.5-flash','gemini-2.0-flash','gemini-1.5-flash'];var i=0;
+function tryOne(){
+fetch('https://generativelanguage.googleapis.com/v1beta/models/'+models[i]+':generateContent?key='+encodeURIComponent(key),
+{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:history[0].content}]},contents:[{role:'user',parts:[{text:q}]}]})})
+.then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+.then(function(j){var a='';try{a=j.candidates[0].content.parts.map(function(p){return p.text||''}).join('')}catch(e){}
+if(!a)throw new Error('empty');done(a);})
+.catch(function(e){i++;if(i<models.length){wait.textContent='กำลังคิด... ('+models[i]+')';tryOne();}else fail(e);});
+}
+tryOne();
+}
 function ask(){
 var q=input.value.trim();if(!q)return;input.value='';
 add('pkf-user',q);history.push({role:'user',content:q});
 var wait=add('pkf-bot','กำลังคิด...');
 send.disabled=true;
+function fail(e){wait.textContent='❌ เชื่อมต่อ AI ไม่สำเร็จ\n'+e.message+'\n(Dev mode: ใส่ Gemini key ฟรีที่ aistudio.google.com/apikey หรือเปิด Ollama ในเครื่อง)';send.disabled=false;}
+if(geminiKey()){
+askGemini(q,wait,function(a){wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=false;input.focus();},fail);
+}else if(window.location.protocol==='http:'||window.location.hostname==='localhost'||/Android|iPhone/.test(navigator.userAgent)===false){
 fetch('http://127.0.0.1:11434/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
 body:JSON.stringify({model:'gemma4',messages:history,stream:false})})
 .then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
 .then(function(j){var a=(j.message&&j.message.content)||'(ไม่มีคำตอบ)';
 wait.textContent=a;history.push({role:'assistant',content:a});send.disabled=false;input.focus()})
-.catch(function(e){wait.textContent='❌ เชื่อมต่อ AI ในเครื่องไม่ได้\nเปิดโปรแกรม Ollama ก่อน (รันคำสั่ง: ollama serve)\nและตั้ง OLLAMA_ORIGINS ตามคู่มือ\n('+e.message+')';send.disabled=false});
+.catch(fail);
+}else{fail(new Error('ยังไม่มี AI key'));}
 }
 send.onclick=ask;
 input.addEventListener('keydown',function(e){if(e.key==='Enter')ask()});
 })();
 </script>
 <!-- /PKF Local AI -->
+
 
 </body>
 
